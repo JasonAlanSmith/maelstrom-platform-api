@@ -1,2 +1,3 @@
-# maelstrom-platform-api
+# README
+
 The Maelstrom Platform API

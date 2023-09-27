@@ -19,3 +19,13 @@
 
 # Go workspace file
 go.work
+
+# Editor backup file
+*~
+
+# Editor autosave file
+\#*\#
+
+# Maelstrom binaries
+maelstrom-platform-api
+maelstromapi
