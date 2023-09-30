@@ -25,6 +25,7 @@ go.work
 
 # Editor autosave file
 \#*\#
+.\#*
 
 # Maelstrom binaries
 maelstrom-platform-api
