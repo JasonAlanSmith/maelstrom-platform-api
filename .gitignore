@@ -30,3 +30,6 @@ go.work
 # Maelstrom binaries
 maelstrom-platform-api
 maelstromapi
+
+# Environment file
+.env
