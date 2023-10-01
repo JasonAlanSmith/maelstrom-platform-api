@@ -5,3 +5,12 @@
 	Initial API
 	
 	* main.go: Implement simple API with single endpoint (/ping).
+
+2023-09-30  Jason Alan Smith <smith.jason.alan.me@gmail.com>
+
+	Add endpoint to create an issue
+	
+	* database/database.go: Connect to a PostgreSQL database.
+	
+	* main.go: Add createIssue and Issue struct. Add call to
+	connect to database and route to main.
