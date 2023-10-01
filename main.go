@@ -43,6 +43,30 @@ func createIssue(ctx *gin.Context) {
 	}
 }
 
+func getIssues(ctx *gin.Context) {
+	sql := "SELECT * FROM issue"
+
+	results, err := database.Db.Query(sql)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	issues := []Issue{}
+	for results.Next() {
+		var iss Issue
+		err = results.Scan(&iss.SysId, &iss.Identifier,
+			&iss.SummaryBrief, &iss.SummaryLong)
+		if err != nil {
+			panic(err.Error())
+		}
+
+		issues = append(issues, iss)
+	}
+
+	ctx.JSON(http.StatusOK, issues)
+}
+
 func main() {
 	route := gin.Default()
 	database.ConnectDatabase()
@@ -52,7 +76,7 @@ func main() {
 		})
 	})
 	route.POST("/issue", createIssue)
-
+	route.GET("/issue", getIssues)
 	err := route.Run(":8080")
 	if err != nil {
 		panic(err)

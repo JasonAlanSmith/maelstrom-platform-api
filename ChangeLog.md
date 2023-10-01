@@ -14,3 +14,9 @@
 	
 	* main.go: Add createIssue and Issue struct. Add call to
 	connect to database and route to main.
+
+2023-10-01  Jason Alan Smith <smith.jason.alan.me@gmail.com>
+
+	Add endpoint to get all issues
+	
+	* main.go: Add getIssues. Add route to main.
