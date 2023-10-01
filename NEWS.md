@@ -1,6 +1,8 @@
 # NEWS
 
-2023-10-01  The Maelstrom Platform API v0.3.0 is released. The API
+2023-10-01	The Maelstrom Platform API v0.4.0 is released. The API
+			can now update an issue.
+			The Maelstrom Platform API v0.3.0 is released. The API
 	        can now get all issues.
 2023-09-30  The Maelstrom Platform API v0.2.0 is released. The API
 	        can now create an issue.

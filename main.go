@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -67,6 +68,49 @@ func getIssues(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, issues)
 }
 
+func updateIssue(ctx *gin.Context) {
+	body := Issue{}
+	data, err := ctx.GetRawData()
+	if err != nil {
+		ctx.AbortWithStatusJSON(400, "Issue is not defined.\n")
+		return
+	}
+	err = json.Unmarshal(data, &body)
+	if err != nil {
+		fmt.Println(err)
+		ctx.AbortWithStatusJSON(400, "Bad input.\n")
+		return
+	}
+
+	var sysid int
+	var identifier, summary_brief, summary_long string
+
+	sqls := "SELECT * FROM issue WHERE sysid = $1"
+	res := database.Db.QueryRow(sqls, ctx.Param("sysid"))
+	err = res.Scan(&sysid, &identifier, &summary_brief, &summary_long)
+	if err == sql.ErrNoRows {
+		ctx.AbortWithStatusJSON(400, "Issue does not exist.")
+		return
+	}
+	if err != nil {
+		fmt.Println(err)
+		ctx.AbortWithStatusJSON(400, "An error occurred.")
+		return
+	}
+
+	sql := "UPDATE issue SET sysid = $1, identifier = $2, "
+	sql += "summary_brief = $3, summary_long = $4 WHERE sysid = $5"
+
+	_, err = database.Db.Exec(sql, body.SysId, body.Identifier,
+		body.SummaryBrief, body.SummaryLong, ctx.Param("sysid"))
+	if err != nil {
+		fmt.Println(err)
+		ctx.AbortWithStatusJSON(400, "Could not update issue.")
+	} else {
+		ctx.JSON(http.StatusOK, "Successfully updated issue.")
+	}
+}
+
 func main() {
 	route := gin.Default()
 	database.ConnectDatabase()
@@ -77,6 +121,7 @@ func main() {
 	})
 	route.POST("/issue", createIssue)
 	route.GET("/issue", getIssues)
+	route.POST("/issue/:sysid", updateIssue)
 	err := route.Run(":8080")
 	if err != nil {
 		panic(err)

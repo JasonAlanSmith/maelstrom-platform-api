@@ -20,3 +20,8 @@
 	Add endpoint to get all issues
 	
 	* main.go: Add getIssues. Add route to main.
+
+	Add endpoint to update an issue.
+	
+	* main.go: Add updateIssue. Add route to main.
+	
