@@ -25,3 +25,11 @@
 	
 	* main.go: Add updateIssue. Add route to main.
 	
+2023-10-02  Jason Alan Smith <smith.jason.alan.me@gmail.com>
+
+	Add endpoint to patch an issue
+	
+	* main.go: Add patchIssue and mergeIssue. These are two
+	methods of patching a resource. Add route for patchIssue
+	to main.
+	

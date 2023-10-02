@@ -4,17 +4,19 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 
+	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/gin-gonic/gin"
 	"github.com/jasonalansmith/maelstrom-platform-api/database"
 )
 
 type Issue struct {
-	SysId        uint
-	Identifier   string
-	SummaryBrief string
-	SummaryLong  string
+	SysId        uint   `json:"sysid,omitempty"`
+	Identifier   string `json:"identifier,omitempty"`
+	SummaryBrief string `json:"summary_brief,omitempty"`
+	SummaryLong  string `json:"summary_long,omitempty"`
 }
 
 func createIssue(ctx *gin.Context) {
@@ -111,6 +113,117 @@ func updateIssue(ctx *gin.Context) {
 	}
 }
 
+func patchIssue(ctx *gin.Context) {
+	id := ctx.Param("sysid")
+
+	iss := &Issue{}
+	sqls := "SELECT * FROM issue WHERE sysid = $1"
+	res := database.Db.QueryRow(sqls, id)
+	err := res.Scan(&iss.SysId, &iss.Identifier, &iss.SummaryBrief,
+		&iss.SummaryLong)
+	if err == sql.ErrNoRows {
+		ctx.AbortWithStatusJSON(400, "Issue does not exist.")
+		return
+	}
+
+	issueBytes, err := json.Marshal(iss)
+	if err != nil {
+		fmt.Println("Error creating patch json ", err.Error())
+		return
+	}
+
+	PatchJSON, err := io.ReadAll(ctx.Request.Body)
+	fmt.Println(string(PatchJSON))
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	patch, err := jsonpatch.DecodePatch(PatchJSON)
+	if err != nil {
+		fmt.Println("Error decoding patch json ", err.Error())
+		return
+	}
+
+	patchedIssue, err := patch.Apply(issueBytes)
+	if err != nil {
+		fmt.Println("Error applying patch json ", err.Error())
+		return
+	}
+
+	fmt.Println(string(patchedIssue))
+
+	si := Issue{}
+	err = json.Unmarshal(patchedIssue, &si)
+	if err != nil {
+		fmt.Println(err)
+		ctx.AbortWithStatusJSON(400, "Cannot unmarshal patchedIssue.")
+		return
+	}
+
+	sqlu := "UPDATE issue SET sysid = $1, identifier = $2, "
+	sqlu += "summary_brief = $3, summary_long = $4 "
+	sqlu += "WHERE sysid = $5"
+
+	fmt.Println(sqlu)
+
+	_, err = database.Db.Exec(sqlu, si.SysId, si.Identifier,
+		si.SummaryBrief, si.SummaryLong, id)
+	if err != nil {
+		fmt.Println(err)
+		ctx.AbortWithStatusJSON(400, "Cannot patch issue.")
+		return
+	} else {
+		ctx.JSON(http.StatusOK, "Successfully patched issue.")
+		return
+	}
+}
+
+func mergeIssue(ctx *gin.Context) {
+	id := ctx.Param("sysid")
+
+	iss := Issue{}
+	sqls := "SELECT * FROM issue WHERE sysid = $1"
+	res := database.Db.QueryRow(sqls, id)
+	err := res.Scan(&iss.SysId, &iss.Identifier, &iss.SummaryBrief,
+		&iss.SummaryLong)
+	if err == sql.ErrNoRows {
+		ctx.AbortWithStatusJSON(400, "Issue does not exist.")
+		return
+	}
+
+	issueBytes, err := json.Marshal(iss)
+	if err != nil {
+		fmt.Println("Error creating patch json ", err.Error())
+		return
+	}
+
+	fmt.Println("issueBytes is: " + string(issueBytes))
+	request, _ := io.ReadAll(ctx.Request.Body)
+	fmt.Println("request is: " + string(request))
+	patchedJSON, _ := jsonpatch.MergePatch(issueBytes, request)
+	fmt.Println("patchedJSON is: " + string(patchedJSON))
+
+	iss1 := Issue{}
+	err = json.Unmarshal(patchedJSON, &iss1)
+
+	sqlu := "UPDATE issue SET sysid = $1, identifier = $2, "
+	sqlu += "summary_brief = $3, summary_long = $4 "
+	sqlu += "WHERE sysid = $5"
+
+	fmt.Println(sqlu)
+
+	_, err = database.Db.Exec(sqlu, iss1.SysId, iss1.Identifier,
+		iss1.SummaryBrief, iss1.SummaryLong, id)
+	if err != nil {
+		fmt.Println(err)
+		ctx.AbortWithStatusJSON(400, "Cannot merge issue.")
+		return
+	} else {
+		ctx.JSON(http.StatusOK, "Successfully merged issue.")
+		return
+	}
+}
+
 func main() {
 	route := gin.Default()
 	database.ConnectDatabase()
@@ -122,6 +235,8 @@ func main() {
 	route.POST("/issue", createIssue)
 	route.GET("/issue", getIssues)
 	route.POST("/issue/:sysid", updateIssue)
+	route.PATCH("/issue/:sysid", patchIssue)
+	// route.PATCH("/issue/:sysid", mergeIssue)
 	err := route.Run(":8080")
 	if err != nil {
 		panic(err)
