@@ -33,3 +33,6 @@
 	methods of patching a resource. Add route for patchIssue
 	to main.
 	
+	Add endpoint to delete an issue
+	
+	* main.go: Add deleteIssue. Add route to main.

@@ -224,6 +224,30 @@ func mergeIssue(ctx *gin.Context) {
 	}
 }
 
+func deleteIssue(ctx *gin.Context) {
+	id := ctx.Param("sysid")
+
+	sqle := "SELECT * FROM issue WHERE sysid = $1"
+	sqld := "DELETE FROM issue WHERE sysid = $1"
+
+	rese := database.Db.QueryRow(sqle, id)
+	var sysid int
+	var identifier, summary_brief, summary_long string
+	err := rese.Scan(&sysid, &identifier, &summary_brief, &summary_long)
+	if err == sql.ErrNoRows {
+		ctx.AbortWithStatusJSON(400, "Issue does not exist.")
+		return
+	}
+
+	_, err = database.Db.Exec(sqld, id)
+	if err != nil {
+		ctx.AbortWithStatusJSON(400, "Could not delete issue.")
+		return
+	} else {
+		ctx.JSON(http.StatusOK, "Successfully deleted the issue.")
+	}
+}
+
 func main() {
 	route := gin.Default()
 	database.ConnectDatabase()
@@ -237,6 +261,7 @@ func main() {
 	route.POST("/issue/:sysid", updateIssue)
 	route.PATCH("/issue/:sysid", patchIssue)
 	// route.PATCH("/issue/:sysid", mergeIssue)
+	route.DELETE("/issue/:sysid", deleteIssue)
 	err := route.Run(":8080")
 	if err != nil {
 		panic(err)
