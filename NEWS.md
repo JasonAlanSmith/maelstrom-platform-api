@@ -1,5 +1,8 @@
 # NEWS
 
+2023-10-03  The Maelstrom Platform API v0.7.0 is released. The API
+	        can now get a specific issue. All basic CRUD operations
+			are now implemented.
 2023-10-02  The Maelstrom Platform API v0.6.0 is released. The API
 	        can now delete an issue.
 	        The Maelstrom Platform API v0.5.0 is released. The API

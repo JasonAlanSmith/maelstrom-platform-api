@@ -70,6 +70,30 @@ func getIssues(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, issues)
 }
 
+func getIssueById(ctx *gin.Context) {
+	id := ctx.Param("sysid")
+
+	sqls := "SELECT * FROM issue WHERE sysid = $1"
+
+	var sysid uint
+	var identifier, summary_brief, summary_long string
+
+	res := database.Db.QueryRow(sqls, id)
+	err := res.Scan(&sysid, &identifier, &summary_brief, &summary_long)
+	if err != nil {
+		ctx.AbortWithStatusJSON(400, "Issue not found.")
+		return
+	}
+
+	issue := Issue{}
+	issue.SysId = sysid
+	issue.Identifier = identifier
+	issue.SummaryBrief = summary_brief
+	issue.SummaryLong = summary_long
+
+	ctx.JSON(http.StatusOK, issue)
+}
+
 func updateIssue(ctx *gin.Context) {
 	body := Issue{}
 	data, err := ctx.GetRawData()
@@ -258,6 +282,7 @@ func main() {
 	})
 	route.POST("/issue", createIssue)
 	route.GET("/issue", getIssues)
+	route.GET("/issue/:sysid", getIssueById)
 	route.POST("/issue/:sysid", updateIssue)
 	route.PATCH("/issue/:sysid", patchIssue)
 	// route.PATCH("/issue/:sysid", mergeIssue)

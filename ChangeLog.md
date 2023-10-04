@@ -36,3 +36,9 @@
 	Add endpoint to delete an issue
 	
 	* main.go: Add deleteIssue. Add route to main.
+
+2023-10-03  Jason Alan Smith <smith.jason.alan.me@gmail.com>
+
+	Add endpoint to get an issue
+	
+	* main.go: Add getIssueById. Add route to main.
