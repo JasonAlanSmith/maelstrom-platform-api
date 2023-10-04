@@ -283,7 +283,7 @@ func main() {
 	route.POST("/issue", createIssue)
 	route.GET("/issue", getIssues)
 	route.GET("/issue/:sysid", getIssueById)
-	route.POST("/issue/:sysid", updateIssue)
+	route.PUT("/issue/:sysid", updateIssue)
 	route.PATCH("/issue/:sysid", patchIssue)
 	// route.PATCH("/issue/:sysid", mergeIssue)
 	route.DELETE("/issue/:sysid", deleteIssue)
