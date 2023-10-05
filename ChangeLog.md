@@ -42,3 +42,9 @@
 	Add endpoint to get an issue
 	
 	* main.go: Add getIssueById. Add route to main.
+
+2023-10-04  Jason Alan Smith <smith.jason.alan.me@gmail.com>
+
+	Fix bug where http PUT route was using POST
+	
+	* main.go: Change POST to PUT in main.
