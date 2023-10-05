@@ -19,7 +19,7 @@ type Issue struct {
 	SummaryLong  string `json:"summary_long,omitempty"`
 }
 
-func createIssue(ctx *gin.Context) {
+func postIssue(ctx *gin.Context) {
 	body := Issue{}
 	data, err := ctx.GetRawData()
 	if err != nil {
@@ -94,7 +94,7 @@ func getIssueById(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, issue)
 }
 
-func updateIssue(ctx *gin.Context) {
+func putIssue(ctx *gin.Context) {
 	body := Issue{}
 	data, err := ctx.GetRawData()
 	if err != nil {
@@ -137,7 +137,7 @@ func updateIssue(ctx *gin.Context) {
 	}
 }
 
-func patchIssue(ctx *gin.Context) {
+func patchIssuePatchDoc(ctx *gin.Context) {
 	id := ctx.Param("sysid")
 
 	iss := &Issue{}
@@ -202,7 +202,7 @@ func patchIssue(ctx *gin.Context) {
 	}
 }
 
-func mergeIssue(ctx *gin.Context) {
+func patchIssueMerge(ctx *gin.Context) {
 	id := ctx.Param("sysid")
 
 	iss := Issue{}
@@ -280,12 +280,12 @@ func main() {
 			"message": "pong",
 		})
 	})
-	route.POST("/issue", createIssue)
+	route.POST("/issue", postIssue)
 	route.GET("/issue", getIssues)
 	route.GET("/issue/:sysid", getIssueById)
-	route.PUT("/issue/:sysid", updateIssue)
-	route.PATCH("/issue/:sysid", patchIssue)
-	// route.PATCH("/issue/:sysid", mergeIssue)
+	route.PUT("/issue/:sysid", putIssue)
+	route.PATCH("/issue/:sysid", patchIssuePatchDoc)
+	// route.PATCH("/issue/:sysid", patchIssueMergeIssue)
 	route.DELETE("/issue/:sysid", deleteIssue)
 	err := route.Run(":8080")
 	if err != nil {

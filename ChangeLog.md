@@ -48,3 +48,8 @@
 	Fix bug where http PUT route was using POST
 	
 	* main.go: Change POST to PUT in main.
+
+	Refactor route handler names to match http methods
+	
+	* main.go: Rename functions to include http method name.
+	Update main to refer to new function names.
