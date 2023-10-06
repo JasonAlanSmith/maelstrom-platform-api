@@ -33,3 +33,6 @@ maelstromapi
 
 # Environment file
 .env
+
+# Log file
+*.log
