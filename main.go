@@ -5,7 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
+	"os"
+	"time"
 
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/gin-gonic/gin"
@@ -23,12 +26,13 @@ func postIssue(ctx *gin.Context) {
 	body := Issue{}
 	data, err := ctx.GetRawData()
 	if err != nil {
+		slog.Error(err.Error())
 		ctx.AbortWithStatusJSON(400, "Issue is not defined.\n")
 		return
 	}
 	err = json.Unmarshal(data, &body)
 	if err != nil {
-		fmt.Println(err)
+		slog.Error(err.Error())
 		ctx.AbortWithStatusJSON(400, "Bad input.\n")
 		return
 	}
@@ -39,9 +43,10 @@ func postIssue(ctx *gin.Context) {
 	_, err = database.Db.Exec(sql, body.SysId, body.Identifier,
 		body.SummaryBrief, body.SummaryLong)
 	if err != nil {
-		fmt.Println(err)
+		slog.Error(err.Error())
 		ctx.AbortWithStatusJSON(400, "Could not create new issue.\n")
 	} else {
+		slog.Info("Successfully created issue.")
 		ctx.JSON(http.StatusOK, "Issue successfully created.\n")
 	}
 }
@@ -51,7 +56,7 @@ func getIssues(ctx *gin.Context) {
 
 	results, err := database.Db.Query(sql)
 	if err != nil {
-		fmt.Println(err)
+		slog.Error(err.Error())
 		return
 	}
 
@@ -61,12 +66,14 @@ func getIssues(ctx *gin.Context) {
 		err = results.Scan(&iss.SysId, &iss.Identifier,
 			&iss.SummaryBrief, &iss.SummaryLong)
 		if err != nil {
-			panic(err.Error())
+			slog.Error(err.Error())
+			return
 		}
 
 		issues = append(issues, iss)
 	}
 
+	slog.Info("Successfully returned all issues.")
 	ctx.JSON(http.StatusOK, issues)
 }
 
@@ -81,6 +88,7 @@ func getIssueById(ctx *gin.Context) {
 	res := database.Db.QueryRow(sqls, id)
 	err := res.Scan(&sysid, &identifier, &summary_brief, &summary_long)
 	if err != nil {
+		slog.Error(err.Error())
 		ctx.AbortWithStatusJSON(400, "Issue not found.")
 		return
 	}
@@ -91,6 +99,7 @@ func getIssueById(ctx *gin.Context) {
 	issue.SummaryBrief = summary_brief
 	issue.SummaryLong = summary_long
 
+	slog.Info("Successfully returned one issue.")
 	ctx.JSON(http.StatusOK, issue)
 }
 
@@ -98,12 +107,13 @@ func putIssue(ctx *gin.Context) {
 	body := Issue{}
 	data, err := ctx.GetRawData()
 	if err != nil {
+		slog.Error(err.Error())
 		ctx.AbortWithStatusJSON(400, "Issue is not defined.\n")
 		return
 	}
 	err = json.Unmarshal(data, &body)
 	if err != nil {
-		fmt.Println(err)
+		slog.Error(err.Error())
 		ctx.AbortWithStatusJSON(400, "Bad input.\n")
 		return
 	}
@@ -115,11 +125,12 @@ func putIssue(ctx *gin.Context) {
 	res := database.Db.QueryRow(sqls, ctx.Param("sysid"))
 	err = res.Scan(&sysid, &identifier, &summary_brief, &summary_long)
 	if err == sql.ErrNoRows {
+		slog.Error(err.Error())
 		ctx.AbortWithStatusJSON(400, "Issue does not exist.")
 		return
 	}
 	if err != nil {
-		fmt.Println(err)
+		slog.Error(err.Error())
 		ctx.AbortWithStatusJSON(400, "An error occurred.")
 		return
 	}
@@ -130,9 +141,11 @@ func putIssue(ctx *gin.Context) {
 	_, err = database.Db.Exec(sql, body.SysId, body.Identifier,
 		body.SummaryBrief, body.SummaryLong, ctx.Param("sysid"))
 	if err != nil {
-		fmt.Println(err)
+		slog.Error(err.Error())
 		ctx.AbortWithStatusJSON(400, "Could not update issue.")
+		return
 	} else {
+		slog.Info("Successfully updated an issue.")
 		ctx.JSON(http.StatusOK, "Successfully updated issue.")
 	}
 }
@@ -146,31 +159,32 @@ func patchIssuePatchDoc(ctx *gin.Context) {
 	err := res.Scan(&iss.SysId, &iss.Identifier, &iss.SummaryBrief,
 		&iss.SummaryLong)
 	if err == sql.ErrNoRows {
+		slog.Error(err.Error())
 		ctx.AbortWithStatusJSON(400, "Issue does not exist.")
 		return
 	}
 
 	issueBytes, err := json.Marshal(iss)
 	if err != nil {
-		fmt.Println("Error creating patch json ", err.Error())
+		slog.Error(err.Error())
 		return
 	}
 
 	PatchJSON, err := io.ReadAll(ctx.Request.Body)
-	fmt.Println(string(PatchJSON))
 	if err != nil {
-		fmt.Println(err)
+		slog.Error(err.Error())
+		return
 	}
 
 	patch, err := jsonpatch.DecodePatch(PatchJSON)
 	if err != nil {
-		fmt.Println("Error decoding patch json ", err.Error())
+		slog.Error(err.Error())
 		return
 	}
 
 	patchedIssue, err := patch.Apply(issueBytes)
 	if err != nil {
-		fmt.Println("Error applying patch json ", err.Error())
+		slog.Error(err.Error())
 		return
 	}
 
@@ -179,7 +193,7 @@ func patchIssuePatchDoc(ctx *gin.Context) {
 	si := Issue{}
 	err = json.Unmarshal(patchedIssue, &si)
 	if err != nil {
-		fmt.Println(err)
+		slog.Error(err.Error())
 		ctx.AbortWithStatusJSON(400, "Cannot unmarshal patchedIssue.")
 		return
 	}
@@ -188,15 +202,14 @@ func patchIssuePatchDoc(ctx *gin.Context) {
 	sqlu += "summary_brief = $3, summary_long = $4 "
 	sqlu += "WHERE sysid = $5"
 
-	fmt.Println(sqlu)
-
 	_, err = database.Db.Exec(sqlu, si.SysId, si.Identifier,
 		si.SummaryBrief, si.SummaryLong, id)
 	if err != nil {
-		fmt.Println(err)
+		slog.Error(err.Error())
 		ctx.AbortWithStatusJSON(400, "Cannot patch issue.")
 		return
 	} else {
+		slog.Info("Successfully patched an issue using PatchDoc.")
 		ctx.JSON(http.StatusOK, "Successfully patched issue.")
 		return
 	}
@@ -211,38 +224,39 @@ func patchIssueMerge(ctx *gin.Context) {
 	err := res.Scan(&iss.SysId, &iss.Identifier, &iss.SummaryBrief,
 		&iss.SummaryLong)
 	if err == sql.ErrNoRows {
+		slog.Error(err.Error())
 		ctx.AbortWithStatusJSON(400, "Issue does not exist.")
 		return
 	}
 
 	issueBytes, err := json.Marshal(iss)
 	if err != nil {
-		fmt.Println("Error creating patch json ", err.Error())
+		slog.Error(err.Error())
 		return
 	}
 
-	fmt.Println("issueBytes is: " + string(issueBytes))
 	request, _ := io.ReadAll(ctx.Request.Body)
-	fmt.Println("request is: " + string(request))
 	patchedJSON, _ := jsonpatch.MergePatch(issueBytes, request)
-	fmt.Println("patchedJSON is: " + string(patchedJSON))
 
 	iss1 := Issue{}
 	err = json.Unmarshal(patchedJSON, &iss1)
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
 
 	sqlu := "UPDATE issue SET sysid = $1, identifier = $2, "
 	sqlu += "summary_brief = $3, summary_long = $4 "
 	sqlu += "WHERE sysid = $5"
 
-	fmt.Println(sqlu)
-
 	_, err = database.Db.Exec(sqlu, iss1.SysId, iss1.Identifier,
 		iss1.SummaryBrief, iss1.SummaryLong, id)
 	if err != nil {
-		fmt.Println(err)
+		slog.Error(err.Error())
 		ctx.AbortWithStatusJSON(400, "Cannot merge issue.")
 		return
 	} else {
+		slog.Info("Successfully patched an issue using Merge method.")
 		ctx.JSON(http.StatusOK, "Successfully merged issue.")
 		return
 	}
@@ -259,21 +273,64 @@ func deleteIssue(ctx *gin.Context) {
 	var identifier, summary_brief, summary_long string
 	err := rese.Scan(&sysid, &identifier, &summary_brief, &summary_long)
 	if err == sql.ErrNoRows {
+		slog.Error(err.Error())
 		ctx.AbortWithStatusJSON(400, "Issue does not exist.")
 		return
 	}
 
 	_, err = database.Db.Exec(sqld, id)
 	if err != nil {
+		slog.Error(err.Error())
 		ctx.AbortWithStatusJSON(400, "Could not delete issue.")
 		return
 	} else {
+		slog.Info("Successfully deleted an issue.")
 		ctx.JSON(http.StatusOK, "Successfully deleted the issue.")
 	}
 }
 
+func RequestLogger() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		t := time.Now()
+
+		ctx.Next()
+
+		latency := time.Since(t).Milliseconds()
+
+		m := ctx.Request.Method
+		rp := ctx.Request.URL.Path
+		p := ctx.Request.Proto
+		l := latency
+		slog.Info("Request: ", "Method", m, "Request URL Path", rp, "Protocol", p, "Latency", l)
+	}
+}
+
+/*
+func ResponseLogger() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		ctx.Writer.Header().Set("X-Content-Type-Options", "nosniff")
+
+		ctx.Next()
+
+		s := ctx.Writer.Status()
+		m := ctx.Request.Method
+		rp := ctx.Request.URL.Path
+		fmt.Println(rp)
+		slog.Info("Response: ", "Status", strconv.Itoa(s), "Method", m, "Request URL Path", rp)
+	}
+}
+*/
+
 func main() {
+	logFile, err := os.OpenFile("maelstromapi.log", os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
+	logger := slog.New(slog.NewJSONHandler(logFile, nil))
+	slog.SetDefault(logger)
+
+	slog.Info("The Maelstrom Platform API is starting.")
+
 	route := gin.Default()
+	route.Use(RequestLogger())
+	// route.Use(ResponseLogger())
 	database.ConnectDatabase()
 	route.GET("/ping", func(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, gin.H{
@@ -287,8 +344,9 @@ func main() {
 	route.PATCH("/issue/:sysid", patchIssuePatchDoc)
 	// route.PATCH("/issue/:sysid", patchIssueMergeIssue)
 	route.DELETE("/issue/:sysid", deleteIssue)
-	err := route.Run(":8080")
+	err = route.Run(":8080")
 	if err != nil {
+		slog.Error(err.Error())
 		panic(err)
 	}
 }

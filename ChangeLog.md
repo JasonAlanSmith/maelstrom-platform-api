@@ -53,3 +53,10 @@
 	
 	* main.go: Rename functions to include http method name.
 	Update main to refer to new function names.
+
+2023-10-05  Jason Alan Smith <smith.jason.alan.me@gmail.com>
+
+	Add logging using logger
+	
+	main.go: Update all functions to use a logger replacing
+	print statements.
