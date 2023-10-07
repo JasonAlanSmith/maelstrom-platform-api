@@ -60,3 +60,13 @@
 	
 	main.go: Update all functions to use a logger replacing
 	print statements.
+
+2023-10-07  Jason Alan Smith <smith.jason.alan.me@gmail.com>
+
+	Add database infrastructure
+	
+	* database.go: Add support to read .env variables for
+	connecting to the six databases. Set the database role
+	passwords based on environment variables.
+	
+	* main.go: Use the new connections setup in database.go.
