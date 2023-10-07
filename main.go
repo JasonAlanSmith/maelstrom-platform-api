@@ -12,14 +12,14 @@ import (
 
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/gin-gonic/gin"
-	"github.com/jasonalansmith/maelstrom-platform-api/database"
+	"github.com/google/uuid"
 )
 
 type Issue struct {
-	SysId        uint   `json:"sysid,omitempty"`
-	Identifier   string `json:"identifier,omitempty"`
-	SummaryBrief string `json:"summary_brief,omitempty"`
-	SummaryLong  string `json:"summary_long,omitempty"`
+	SysId        uuid.UUID `json:"sysid,omitempty"`
+	Identifier   string    `json:"identifier,omitempty"`
+	SummaryBrief string    `json:"summary_brief,omitempty"`
+	SummaryLong  string    `json:"summary_long,omitempty"`
 }
 
 func postIssue(ctx *gin.Context) {
@@ -40,7 +40,7 @@ func postIssue(ctx *gin.Context) {
 	sql := "INSERT INTO Issue (sysid, identifier, summary_brief, "
 	sql += "summary_long) VALUES ($1, $2, $3, $4)"
 
-	_, err = database.Db.Exec(sql, body.SysId, body.Identifier,
+	_, err = MaelstromDb.Exec(sql, body.SysId, body.Identifier,
 		body.SummaryBrief, body.SummaryLong)
 	if err != nil {
 		slog.Error(err.Error())
@@ -52,11 +52,11 @@ func postIssue(ctx *gin.Context) {
 }
 
 func getIssues(ctx *gin.Context) {
-	sql := "SELECT * FROM issue"
+	sql := "SELECT * FROM select_issue_all();"
 
-	results, err := database.Db.Query(sql)
+	results, err := MaelstromDb.Query(sql)
 	if err != nil {
-		slog.Error(err.Error())
+		slog.Error("In getIssues, first call: " + err.Error())
 		return
 	}
 
@@ -80,12 +80,12 @@ func getIssues(ctx *gin.Context) {
 func getIssueById(ctx *gin.Context) {
 	id := ctx.Param("sysid")
 
-	sqls := "SELECT * FROM issue WHERE sysid = $1"
+	sqls := "SELECT * FROM select_issue_by_sysid($1);"
 
-	var sysid uint
+	var sysid uuid.UUID
 	var identifier, summary_brief, summary_long string
 
-	res := database.Db.QueryRow(sqls, id)
+	res := MaelstromDb.QueryRow(sqls, id)
 	err := res.Scan(&sysid, &identifier, &summary_brief, &summary_long)
 	if err != nil {
 		slog.Error(err.Error())
@@ -118,11 +118,11 @@ func putIssue(ctx *gin.Context) {
 		return
 	}
 
-	var sysid int
+	var sysid uuid.UUID
 	var identifier, summary_brief, summary_long string
 
-	sqls := "SELECT * FROM issue WHERE sysid = $1"
-	res := database.Db.QueryRow(sqls, ctx.Param("sysid"))
+	sqls := "SELECT * FROM select_issue_by_sysid($1);"
+	res := MaelstromDb.QueryRow(sqls, ctx.Param("sysid"))
 	err = res.Scan(&sysid, &identifier, &summary_brief, &summary_long)
 	if err == sql.ErrNoRows {
 		slog.Error(err.Error())
@@ -138,7 +138,7 @@ func putIssue(ctx *gin.Context) {
 	sql := "UPDATE issue SET sysid = $1, identifier = $2, "
 	sql += "summary_brief = $3, summary_long = $4 WHERE sysid = $5"
 
-	_, err = database.Db.Exec(sql, body.SysId, body.Identifier,
+	_, err = MaelstromDb.Exec(sql, body.SysId, body.Identifier,
 		body.SummaryBrief, body.SummaryLong, ctx.Param("sysid"))
 	if err != nil {
 		slog.Error(err.Error())
@@ -154,8 +154,8 @@ func patchIssuePatchDoc(ctx *gin.Context) {
 	id := ctx.Param("sysid")
 
 	iss := &Issue{}
-	sqls := "SELECT * FROM issue WHERE sysid = $1"
-	res := database.Db.QueryRow(sqls, id)
+	sqls := "SELECT * FROM select_issue_by_sysid($1);"
+	res := MaelstromDb.QueryRow(sqls, id)
 	err := res.Scan(&iss.SysId, &iss.Identifier, &iss.SummaryBrief,
 		&iss.SummaryLong)
 	if err == sql.ErrNoRows {
@@ -202,7 +202,7 @@ func patchIssuePatchDoc(ctx *gin.Context) {
 	sqlu += "summary_brief = $3, summary_long = $4 "
 	sqlu += "WHERE sysid = $5"
 
-	_, err = database.Db.Exec(sqlu, si.SysId, si.Identifier,
+	_, err = MaelstromDb.Exec(sqlu, si.SysId, si.Identifier,
 		si.SummaryBrief, si.SummaryLong, id)
 	if err != nil {
 		slog.Error(err.Error())
@@ -219,8 +219,8 @@ func patchIssueMerge(ctx *gin.Context) {
 	id := ctx.Param("sysid")
 
 	iss := Issue{}
-	sqls := "SELECT * FROM issue WHERE sysid = $1"
-	res := database.Db.QueryRow(sqls, id)
+	sqls := "SELECT * FROM select_issue_by_sysid($1);"
+	res := MaelstromDb.QueryRow(sqls, id)
 	err := res.Scan(&iss.SysId, &iss.Identifier, &iss.SummaryBrief,
 		&iss.SummaryLong)
 	if err == sql.ErrNoRows {
@@ -249,7 +249,7 @@ func patchIssueMerge(ctx *gin.Context) {
 	sqlu += "summary_brief = $3, summary_long = $4 "
 	sqlu += "WHERE sysid = $5"
 
-	_, err = database.Db.Exec(sqlu, iss1.SysId, iss1.Identifier,
+	_, err = MaelstromDb.Exec(sqlu, iss1.SysId, iss1.Identifier,
 		iss1.SummaryBrief, iss1.SummaryLong, id)
 	if err != nil {
 		slog.Error(err.Error())
@@ -265,11 +265,11 @@ func patchIssueMerge(ctx *gin.Context) {
 func deleteIssue(ctx *gin.Context) {
 	id := ctx.Param("sysid")
 
-	sqle := "SELECT * FROM issue WHERE sysid = $1"
+	sqle := "SELECT * FROM select_issue_by_sysid($1);"
 	sqld := "DELETE FROM issue WHERE sysid = $1"
 
-	rese := database.Db.QueryRow(sqle, id)
-	var sysid int
+	rese := MaelstromDb.QueryRow(sqle, id)
+	var sysid uuid.UUID
 	var identifier, summary_brief, summary_long string
 	err := rese.Scan(&sysid, &identifier, &summary_brief, &summary_long)
 	if err == sql.ErrNoRows {
@@ -278,7 +278,7 @@ func deleteIssue(ctx *gin.Context) {
 		return
 	}
 
-	_, err = database.Db.Exec(sqld, id)
+	_, err = MaelstromDb.Exec(sqld, id)
 	if err != nil {
 		slog.Error(err.Error())
 		ctx.AbortWithStatusJSON(400, "Could not delete issue.")
@@ -331,7 +331,7 @@ func main() {
 	route := gin.Default()
 	route.Use(RequestLogger())
 	// route.Use(ResponseLogger())
-	database.ConnectDatabase()
+	ConnectDatabases()
 	route.GET("/ping", func(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, gin.H{
 			"message": "pong",
