@@ -22,7 +22,7 @@ var MaelstromStagingDb *sql.DB
 func ConnectDatabases() {
 	err := godotenv.Load()
 	if err != nil {
-		fmt.Println("Error has occurred on .env file.")
+		slog.Error("Error has occurred on .env file: ", err.Error())
 	}
 
 	host := os.Getenv("HOST")
@@ -79,7 +79,8 @@ func ConnectDatabases() {
 
 	mi_db, errSql := sql.Open("postgres", mi_cs)
 	if errSql != nil {
-		slog.Error("Cannot connect to the maelstrom_install database: ", err)
+		slog.Error("Cannot connect to the maelstrom_install database: ", err.Error())
+		panic(err.Error())
 	} else {
 		MaelstromInstallDb = mi_db
 		slog.Info("Successfully connected to the maelstrom_install database.")
@@ -87,62 +88,63 @@ func ConnectDatabases() {
 
 	m_db, errSql := sql.Open("postgres", m_cs)
 	if errSql != nil {
-		fmt.Println("Cannot connect to the maelstrom database: ", err)
-		panic(err)
+		slog.Error("Cannot connect to the maelstrom database: ", err.Error())
+		panic(err.Error())
 	} else {
 		MaelstromDb = m_db
-		fmt.Println("Successfully connected to the maelstrom database.")
+		slog.Info("Successfully connected to the maelstrom database.")
 	}
 
 	mar_db, errSql := sql.Open("postgres", mar_cs)
 	if errSql != nil {
-		fmt.Println("Cannot connect to the maelstrom_archive database: ", err)
-		panic(err)
+		slog.Error("Cannot connect to the maelstrom_archive database: ", err.Error())
+		panic(err.Error())
 	} else {
 		MaelstromArchiveDb = mar_db
-		fmt.Println("Successfully connected to the maelstrom_archive database.")
+		slog.Info("Successfully connected to the maelstrom_archive database.")
 	}
 
 	mau_db, errSql := sql.Open("postgres", mau_cs)
 	if errSql != nil {
-		fmt.Println("Cannot connect to the maelstrom_audit database: ", err)
-		panic(err)
+		slog.Error("Cannot connect to the maelstrom_audit database: ", err.Error())
+		panic(err.Error())
 	} else {
 		MaelstromAuditDb = mau_db
-		fmt.Println("Successfully connected to the maelstrom_audit database.")
+		slog.Info("Successfully connected to the maelstrom_audit database.")
 	}
 
 	mdw_db, errSql := sql.Open("postgres", mdw_cs)
 	if errSql != nil {
-		fmt.Println("Cannot connect to the maelstrom_dw database: ", err)
-		panic(err)
+		slog.Error("Cannot connect to the maelstrom_dw database: ", err.Error())
+		panic(err.Error())
 	} else {
 		MaelstromDwDb = mdw_db
-		fmt.Println("Successfully connected to the maelstrom_dw database.")
+		slog.Info("Successfully connected to the maelstrom_dw database.")
 	}
 
 	mlg_db, errSql := sql.Open("postgres", mlg_cs)
 	if errSql != nil {
-		fmt.Println("Cannot connect to the maelstrom_log database: ", err)
-		panic(err)
+		slog.Error("Cannot connect to the maelstrom_log database: ", err.Error())
+		panic(err.Error())
 	} else {
 		MaelstromLogDb = mlg_db
-		fmt.Println("Successfully connected to the maelstrom_log database.")
+		slog.Info("Successfully connected to the maelstrom_log database.")
 	}
 
 	mst_db, errSql := sql.Open("postgres", mst_cs)
 	if errSql != nil {
-		fmt.Println("Cannot connect to the maelstrom_staging database: ", err)
-		panic(err)
+		slog.Error("Cannot connect to the maelstrom_staging database: ", err.Error())
+		panic(err.Error())
 	} else {
 		MaelstromStagingDb = mst_db
-		fmt.Println("Successfully connected to the maelstrom_staging database.")
+		slog.Info("Successfully connected to the maelstrom_staging database.")
 	}
 
 	sqla := fmt.Sprintf("ALTER ROLE maelstrom WITH PASSWORD '%s';", m_db_pass)
 	_, err = MaelstromInstallDb.Exec(sqla)
 	if err != nil {
-		slog.Error("Error updating password for role maelstrom." + err.Error())
+		slog.Error("Error updating password for role maelstrom: ", err.Error())
+		panic(err.Error())
 	} else {
 		slog.Info("Successfully updated password for role maelstrom.")
 	}
@@ -150,7 +152,8 @@ func ConnectDatabases() {
 	sqla = fmt.Sprintf("ALTER ROLE maelstrom_archive WITH PASSWORD '%s';", mar_db_pass)
 	_, err = MaelstromInstallDb.Exec(sqla)
 	if err != nil {
-		slog.Error("Error updating password for role maelstrom_archive.")
+		slog.Error("Error updating password for role maelstrom_archive: ", err.Error())
+		panic(err.Error())
 	} else {
 		slog.Info("Successfully updated password for role maelstrom_archive.")
 	}
@@ -158,7 +161,8 @@ func ConnectDatabases() {
 	sqla = fmt.Sprintf("ALTER ROLE maelstrom_audit WITH PASSWORD '%s';", mau_db_pass)
 	_, err = MaelstromInstallDb.Exec(sqla)
 	if err != nil {
-		slog.Error("Error updating password for role maelstrom_audit.")
+		slog.Error("Error updating password for role maelstrom_audit: ", err.Error())
+		panic(err.Error())
 	} else {
 		slog.Info("Successfully updated password for role maelstrom_audit.")
 	}
@@ -166,7 +170,8 @@ func ConnectDatabases() {
 	sqla = fmt.Sprintf("ALTER ROLE maelstrom_dw WITH PASSWORD '%s';", mdw_db_pass)
 	_, err = MaelstromInstallDb.Exec(sqla)
 	if err != nil {
-		slog.Error("Error updating password for role maelstrom_dw.")
+		slog.Error("Error updating password for role maelstrom_dw: ", err.Error())
+		panic(err.Error())
 	} else {
 		slog.Info("Successfully updated password for role maelstrom_dw.")
 	}
@@ -174,7 +179,8 @@ func ConnectDatabases() {
 	sqla = fmt.Sprintf("ALTER ROLE maelstrom_log WITH PASSWORD '%s';", mlg_db_pass)
 	_, err = MaelstromInstallDb.Exec(sqla)
 	if err != nil {
-		slog.Error("Error updating password for role maelstrom_log.")
+		slog.Error("Error updating password for role maelstrom_log: ", err.Error())
+		panic(err.Error())
 	} else {
 		slog.Info("Successfully updated password for role maelstrom_log.")
 	}
@@ -182,7 +188,8 @@ func ConnectDatabases() {
 	sqla = fmt.Sprintf("ALTER ROLE maelstrom_staging WITH PASSWORD '%s';", mst_db_pass)
 	_, err = MaelstromInstallDb.Exec(sqla)
 	if err != nil {
-		slog.Error("Error updating password for role maelstrom_staging.")
+		slog.Error("Error updating password for role maelstrom_staging: ", err.Error())
+		panic(err.Error())
 	} else {
 		slog.Info("Successfully updated password for role maelstrom_staging.")
 	}

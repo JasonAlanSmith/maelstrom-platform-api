@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -188,8 +187,6 @@ func patchIssuePatchDoc(ctx *gin.Context) {
 		return
 	}
 
-	fmt.Println(string(patchedIssue))
-
 	si := Issue{}
 	err = json.Unmarshal(patchedIssue, &si)
 	if err != nil {
@@ -315,7 +312,6 @@ func ResponseLogger() gin.HandlerFunc {
 		s := ctx.Writer.Status()
 		m := ctx.Request.Method
 		rp := ctx.Request.URL.Path
-		fmt.Println(rp)
 		slog.Info("Response: ", "Status", strconv.Itoa(s), "Method", m, "Request URL Path", rp)
 	}
 }
@@ -347,6 +343,6 @@ func main() {
 	err = route.Run(":8080")
 	if err != nil {
 		slog.Error(err.Error())
-		panic(err)
+		panic(err.Error())
 	}
 }
