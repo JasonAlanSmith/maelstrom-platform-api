@@ -1,0 +1,68 @@
+-- Create the maelstrom database procedures and functions.
+-- PostgreSQL 16
+
+CREATE OR REPLACE FUNCTION
+select_issue_all()
+RETURNS TABLE (
+       iss_sysid		uuid,
+       iss_identifier		varchar(16),
+       iss_summary_brief	varchar(72),
+       iss_summary_long		varchar(128)
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+	var_r	RECORD;
+BEGIN
+	FOR var_r IN (
+	
+	SELECT  sysid,
+	        identifier,
+	        summary_brief,
+	        summary_long
+		
+	  FROM	issue
+	)
+	LOOP
+		iss_sysid := var_r.sysid;
+		iss_identifier := var_r.identifier;
+		iss_summary_brief := var_r.summary_brief;
+		iss_summary_long := var_r.summary_long;
+		RETURN NEXT;
+	END LOOP;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION
+select_issue_by_sysid(targ_sysid uuid)
+RETURNS TABLE (
+       iss_sysid		uuid,
+       iss_identifier		varchar(16),
+       iss_summary_brief	varchar(72),
+       iss_summary_long		varchar(128)
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+	var_r	RECORD;
+BEGIN
+	FOR var_r IN (
+	
+	SELECT  sysid,
+		identifier,
+		summary_brief,
+		summary_long
+
+	  FROM  issue
+
+	 WHERE  sysid = targ_sysid
+	 )
+	 LOOP
+		iss_sysid := var_r.sysid;
+		iss_identifier := var_r.identifier;
+		iss_summary_brief := var_r.summary_brief;
+		iss_summary_long := var_r.summary_long;
+		RETURN NEXT;
+	END LOOP;
+END;
+$$;
