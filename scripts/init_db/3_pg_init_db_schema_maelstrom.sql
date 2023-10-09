@@ -73,5 +73,5 @@ CREATE TABLE IF NOT EXISTS maelstrom.issue (
               actual_original_build       UUID                        NOT NULL,                          --
               target_original_release     UUID                        NOT NULL,                          --
               estimated_original_release  UUID                        NOT NULL,                          --
-              actual_original_release     UUID                        NOT NULL,                          --
+              actual_original_release     UUID                        NOT NULL				 --
 )
