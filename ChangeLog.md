@@ -70,3 +70,19 @@
 	passwords based on environment variables.
 	
 	* main.go: Use the new connections setup in database.go.
+
+2023-10-08  Jason Alan Smith <smith.jason.alan.me@gmail.com>
+
+	Build out issue relation
+	
+	* main.go: Build out Issue struct to match database
+	columns. Add validation required to Issue struct fields.
+	Add validation check and new function Unmarshal to
+	return 400 Bad Request if not all fields provided in
+	JSON request.
+	
+	* scripts/init_db/3_pg_init_db_schema_maelstrom.sql: Build
+	out schema script for issue relation.
+	
+	* scripts/init_db/9_pg_init_db_maelstrom_procedures.sql: Build
+	out function definitions to match issue relation definition.
