@@ -7,6 +7,8 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"reflect"
+	"strings"
 	"time"
 
 	jsonpatch "github.com/evanphx/json-patch"
@@ -15,10 +17,65 @@ import (
 )
 
 type Issue struct {
-	SysId        uuid.UUID `json:"sysid,omitempty"`
-	Identifier   string    `json:"identifier,omitempty"`
-	SummaryBrief string    `json:"summary_brief,omitempty"`
-	SummaryLong  string    `json:"summary_long,omitempty"`
+	SysId                    uuid.UUID `json:"sysid" maelstrom:"required"`
+	Identifier               string    `json:"identifier" maelstrom:"required"`
+	SummaryBrief             string    `json:"summary_brief" maelstrom:"required"`
+	SummaryLong              string    `json:"summary_long" maelstrom:"required"`
+	ProblemDescription       string    `json:"problem_description" maelstrom:"required"`
+	WorkAround               string    `json:"work_around" maelstrom:"required"`
+	StepsToReproduce         string    `json:"steps_to_reproduce" maelstrom:"required"`
+	Kind                     uuid.UUID `json:"kind" maelstrom:"required" maelstrom:"required"`
+	DateFound                time.Time `json:"date_found" maelstrom:"required"`
+	DateReported             time.Time `json:"date_reported" maelstrom:"required"`
+	DateInput                time.Time `json:"date_input" maelstrom:"required"`
+	FoundByPrimary           uuid.UUID `json:"found_by_primary" maelstrom:"required"`
+	FoundByTeamPrimary       uuid.UUID `json:"found_by_team_primary" maelstrom:"required"`
+	ReportedByPrimary        uuid.UUID `json:"reported_by_primary" maelstrom:"required"`
+	ReportedByTeamPrimary    uuid.UUID `json:"reported_by_team_primary" maelstrom:"required"`
+	InputByPrimary           uuid.UUID `json:"input_by_primary" maelstrom:"required"`
+	InputByTeamPrimary       uuid.UUID `json:"input_by_team_primary" maelstrom:"required"`
+	Severity                 uuid.UUID `json:"severity" maelstrom:"required"`
+	Priority                 uuid.UUID `json:"priority" maelstrom:"required"`
+	OrganizationValue        uuid.UUID `json:"organization_value" maelstrom:"required"`
+	CurrentStatus            uuid.UUID `json:"current_status" maelstrom:"required"`
+	CurrentState             uuid.UUID `json:"current_state" maelstrom:"required"`
+	IsResolved               bool      `json:"is_resolved" maelstrom:"required"`
+	DateResolved             time.Time `json:"date_resolved" maelstrom:"required"`
+	ResolvedByPrimary        uuid.UUID `json:"resolved_by_primary" maelstrom:"required"`
+	ResolvedByTeamPrimary    uuid.UUID `json:"resolved_by_team_primary" maelstrom:"required"`
+	ResolutionDueDate        time.Time `json:"resolution_due_date" maelstrom:"required"`
+	ResolutionEffortUnit     uuid.UUID `json:"resolution_effort_unit" maelstrom:"required"`
+	ResolutionEffort         string    `json:"resolution_effort" maelstrom:"required"`
+	EstimatedResolutionDate  time.Time `json:"estimated_resolution_date" maelstrom:"required"`
+	TargetResolutionDate     time.Time `json:"target_resolution_date" maelstrom:"required"`
+	RootCauseAnalysis        string    `json:"root_cause_analysis" maelstrom:"required"`
+	FixDescription           string    `json:"fix_description" maelstrom:"required"`
+	AssignedToPrimary        uuid.UUID `json:"assigned_to_primary" maelstrom:"required"`
+	AssignedToTeamPrimary    uuid.UUID `json:"assigned_to_team_primary" maelstrom:"required"`
+	TargetOriginalBuild      uuid.UUID `json:"target_original_build" maelstrom:"required"`
+	EstimatedOriginalBuild   uuid.UUID `json:"estimated_original_build" maelstrom:"required"`
+	ActualOriginalBuild      uuid.UUID `json:"actual_original_build" maelstrom:"required"`
+	TargetOriginalRelease    uuid.UUID `json:"target_original_release" maelstrom:"required"`
+	EstimatedOriginalRelease uuid.UUID `json:"estimated_original_release" maelstrom:"required"`
+	ActualOriginalRelease    uuid.UUID `json:"actual_original_release" maelstrom:"required"`
+}
+
+func (i *Issue) Unmarshal(data []byte) (error, []string) {
+	var val_err []string
+	err := json.Unmarshal(data, i)
+	if err != nil {
+		slog.Error(err.Error())
+		return err, val_err
+	}
+
+	fields := reflect.ValueOf(i).Elem()
+	for i := 0; i < fields.NumField(); i++ {
+		maelstromTags := fields.Type().Field(i).Tag.Get("maelstrom")
+		if strings.Contains(maelstromTags, "required") && fields.Field(i).IsZero() {
+			val_err = append(val_err, "Required field is missing: "+fields.Type().Field(i).Name)
+		}
+	}
+	return nil, val_err
 }
 
 func postIssue(ctx *gin.Context) {
@@ -29,11 +86,21 @@ func postIssue(ctx *gin.Context) {
 		ctx.AbortWithStatusJSON(400, "Issue is not defined.\n")
 		return
 	}
-	err = json.Unmarshal(data, &body)
+
+	var val_err []string
+	err, val_err = body.Unmarshal(data)
 	if err != nil {
 		slog.Error(err.Error())
 		ctx.AbortWithStatusJSON(400, "Bad input.\n")
 		return
+	} else {
+		if len(val_err) > 0 {
+			for i := 0; i < len(val_err); i++ {
+				slog.Error(val_err[i])
+			}
+			ctx.AbortWithStatusJSON(400, "One or more validation errors found.")
+			return
+		}
 	}
 
 	sql := "INSERT INTO Issue (sysid, identifier, summary_brief, "
