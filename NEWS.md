@@ -1,5 +1,7 @@
 # NEWS
 
+2023-10-10  The Maelstrom Platform API v0.10.0 is released. The API
+	        has been refactored across a variety of fronts.
 2023-10-08  The Maelstrom Platform API v0.9.0 is released. The API
 	        now has access to an expanded issue relation. The API
 			also will now validate POST requests that all required

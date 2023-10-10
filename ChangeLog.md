@@ -86,3 +86,14 @@
 	
 	* scripts/init_db/9_pg_init_db_maelstrom_procedures.sql: Build
 	out function definitions to match issue relation definition.
+
+2023-10-10  Jason Alan Smith <smith.jason.alan.me@gmail.com>
+
+	Restructure repository and various other work
+	
+	* issue.go: Break it apart putting one function in one file.
+	
+	* Relocate files to internal/pkg directory structure.
+	
+	* Refactor Unmarshal function making it generic so it can
+	accept any structure.
