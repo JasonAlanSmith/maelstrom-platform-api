@@ -2,7 +2,6 @@ package main
 
 import (
 	"log/slog"
-	"net/http"
 	"os"
 
 	"github.com/gin-gonic/gin"
@@ -22,11 +21,7 @@ func main() {
 	route.Use(middleware.RequestLogger())
 	// route.Use(ResponseLogger())
 	database.ConnectDatabases()
-	route.GET("/ping", func(ctx *gin.Context) {
-		ctx.JSON(http.StatusOK, gin.H{
-			"message": "pong",
-		})
-	})
+
 	route.POST("/issue", issue.PostIssue)
 	route.GET("/issue", issue.GetIssues)
 	route.GET("/issue/:sysid", issue.GetIssueBySysId)
